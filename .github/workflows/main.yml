@@ -51,7 +51,7 @@ jobs:
       CMAKE_SYSTEM_VERSION: "${{ matrix.CMAKE_SYSTEM_VERSION }}"
     steps:
     - name: "Clone"
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
         fetch-depth: 0
@@ -78,7 +78,7 @@ jobs:
         echo "obs_version=$(cd "${{ github.workspace }}/third-party/obs-studio" && git describe --tags --long)" >> "$GITHUB_ENV"
     - name: "Dependency: Qt (Cache)"
       id: qt-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: "${{ github.workspace }}/build/qt"
         key: "qt${{ env.qt_hash }}-${{ env.CACHE_VERSION }}"
@@ -92,7 +92,7 @@ jobs:
         7z x -y -o"${{ github.workspace }}/build/qt" -- "/tmp/qt.zip"
     - name: "Dependency: Prebuilt OBS Studio Dependencies (Cache)"
       id: obsdeps-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: "${{ github.workspace }}/build/obsdeps"
         key: "obsdeps${{ env.obs_deps_hash }}-${{ env.CACHE_VERSION }}"
@@ -106,7 +106,7 @@ jobs:
         7z x -y -o"${{ github.workspace }}/build/obsdeps" -- "/tmp/obsdeps.zip"
     - name: "Dependency: OBS Libraries (Cache)"
       id: obs-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: "${{ github.workspace }}/build/obs"
         key: "obs${{ env.obs_version }}-${{ matrix.runner }}_${{ matrix.compiler }}-obsdeps${{ env.obs_deps_hash }}-qt${{ env.qt_hash }}-${{ env.CACHE_VERSION }}"
@@ -184,7 +184,7 @@ jobs:
         7z a StreamFX-Windows.zip StreamFX
 
     - name: "Upload Windows Artifact"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows
         path: package/StreamFX-Windows.zip
@@ -213,7 +213,7 @@ jobs:
       CMAKE_OSX_ARCHITECTURES: "${{ matrix.CMAKE_OSX_ARCHITECTURES }}"
     steps:
     - name: "Clone"
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
         fetch-depth: 0
@@ -240,7 +240,7 @@ jobs:
         echo "obs_version=$(cd "${{ github.workspace }}/third-party/obs-studio" && git describe --tags --long)" >> "$GITHUB_ENV"
     - name: "Dependency: Qt (Cache)"
       id: qt-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: "${{ github.workspace }}/build/qt"
         key: "qt${{ env.qt_hash }}-${{ env.CACHE_VERSION }}"
@@ -254,7 +254,7 @@ jobs:
         tar -xvf "/tmp/qt.tar.xz" -C "${{ github.workspace }}/build/qt"
     - name: "Dependency: Prebuilt OBS Studio Dependencies (Cache)"
       id: obsdeps-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: "${{ github.workspace }}/build/obsdeps"
         key: "obsdeps${{ env.obs_deps_hash }}-${{ env.CACHE_VERSION }}"
@@ -268,7 +268,7 @@ jobs:
         tar -xvf "/tmp/obsdeps.tar.xz" -C "${{ github.workspace }}/build/obsdeps"
     - name: "Dependency: OBS Libraries (Cache)"
       id: obs-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: "${{ github.workspace }}/build/obs"
         key: "obs${{ env.obs_version }}-${{ matrix.runner }}_${{ matrix.compiler }}--obsdeps${{ env.obs_deps_hash }}-qt${{ env.qt_hash }}-${{ env.CACHE_VERSION }}"
@@ -339,7 +339,7 @@ jobs:
         zip -r StreamFX-macOS.zip StreamFX
 
     - name: "Upload macOS Artifact"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: macos
         path: package/StreamFX-macOS.zip
@@ -364,7 +364,7 @@ jobs:
       CMAKE_SYSTEM_VERSION: "${{ matrix.CMAKE_SYSTEM_VERSION }}"
     steps:
     - name: "Clone"
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
         fetch-depth: 0
@@ -419,7 +419,7 @@ jobs:
           libcurl4-openssl-dev
     - name: "Dependency: OBS Libraries (Cache)"
       id: obs-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: "${{ github.workspace }}/build/obs"
         key: "obs${{ env.obs_version }}-${{ matrix.runner }}_${{ matrix.compiler }}--${{ matrix.runner }}-${{ matrix.compiler }}-${{ env.CACHE_VERSION }}"
@@ -503,7 +503,7 @@ jobs:
         tar -czvf StreamFX-Linux.tar.gz StreamFX
 
     - name: "Upload Linux Artifact"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linux
         path: package/StreamFX-Linux.tar.gz
@@ -515,7 +515,7 @@ jobs:
 
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
 
     - name: Publish Nightly Pre-Release
       uses: softprops/action-gh-release@v1
