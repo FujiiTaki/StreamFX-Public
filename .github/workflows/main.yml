@@ -13,6 +13,8 @@ on:
   pull_request:
     branches:
       - '*'
+  workflow_dispatch:
+
 
 concurrency:
   group: build-${{ github.ref_name }}
@@ -169,6 +171,23 @@ jobs:
         CMAKE_BUILD_TYPE: "RelWithDebInfo"
       run: |
         cmake --build "build/ci" --config ${{ env.CMAKE_BUILD_TYPE }} --target StreamFX
+    - name: "Package StreamFX (Windows)"
+      shell: bash
+      run: |
+        mkdir -p package/StreamFX/obs-plugins/64bit
+        mkdir -p package/StreamFX/data
+
+        cp build/ci/RelWithDebInfo/obs-plugins/64bit/StreamFX.dll package/StreamFX/obs-plugins/64bit/
+        cp -r data/StreamFX package/StreamFX/data/
+
+        cd package
+        7z a StreamFX-Windows.zip StreamFX
+
+    - name: "Upload Windows Artifact"
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows
+        path: package/StreamFX-Windows.zip
 
   macos:
     strategy:
@@ -307,6 +326,23 @@ jobs:
         CMAKE_BUILD_TYPE: "RelWithDebInfo"
       run: |
         cmake --build "build/ci" --config RelWithDebInfo --target StreamFX
+    - name: "Package StreamFX (macOS)"
+      shell: bash
+      run: |
+        mkdir -p package/StreamFX/obs-plugins
+        mkdir -p package/StreamFX/data
+
+        cp -R build/ci/RelWithDebInfo/obs-plugins/StreamFX.plugin package/StreamFX/obs-plugins/
+        cp -R data/StreamFX package/StreamFX/data/
+
+        cd package
+        zip -r StreamFX-macOS.zip StreamFX
+
+    - name: "Upload macOS Artifact"
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos
+        path: package/StreamFX-macOS.zip
 
   ubuntu:
     strategy:
@@ -454,3 +490,40 @@ jobs:
       shell: bash
       run: |
         cmake --build "build/ci" --config RelWithDebInfo --target StreamFX
+    - name: "Package StreamFX (Linux)"
+      shell: bash
+      run: |
+        mkdir -p package/StreamFX/obs-plugins
+        mkdir -p package/StreamFX/data
+
+        cp build/ci/RelWithDebInfo/obs-plugins/StreamFX.so package/StreamFX/obs-plugins/
+        cp -R data/StreamFX package/StreamFX/data/
+
+        cd package
+        tar -czvf StreamFX-Linux.tar.gz StreamFX
+
+    - name: "Upload Linux Artifact"
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux
+        path: package/StreamFX-Linux.tar.gz
+
+  release:
+    name: "Publish Nightly"
+    runs-on: ubuntu-latest
+    needs: [windows, macos, ubuntu]
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Publish Nightly Pre-Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: "Nightly"
+        tag_name: "nightly"
+        prerelease: true
+        files: |
+          windows/StreamFX-Windows.zip
+          macos/StreamFX-macOS.zip
+          linux/StreamFX-Linux.tar.gz
