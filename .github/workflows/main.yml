@@ -139,7 +139,19 @@ jobs:
         cmake \
           --install "${{ github.workspace }}/build/obs" \
           --config RelWithDebInfo \
-          --component obs_libraries
+          --component obs_librarie
+    - name: "Fix zlib (MSVC ABI)"
+      shell: bash
+      run: |
+        curl -L -o /tmp/zlib.zip https://github.com/madler/zlib/releases/download/v1.3/zlib131.zip
+        7z x /tmp/zlib.zip -o/tmp/zlib
+
+        cp /tmp/zlib/contrib/vstudio/vc17/x64/ZlibDllRelease/zlib.lib \
+           build/obsdeps/lib/zlib.lib
+
+        cp /tmp/zlib/zlib.h build/obsdeps/include/zlib.h
+        cp /tmp/zlib/zconf.h build/obsdeps/include/zconf.h
+
     - name: "Configure"
       continue-on-error: true
       shell: bash
