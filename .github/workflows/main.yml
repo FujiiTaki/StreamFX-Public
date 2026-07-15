@@ -296,6 +296,8 @@ jobs:
         cmake \
           -S "${{ github.workspace }}/third-party/obs-studio" \
           -B "${{ github.workspace }}/build/obs" \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.CMAKE_OSX_DEPLOYMENT_TARGET }}" \
+          -DCMAKE_OSX_ARCHITECTURES="${{ env.CMAKE_OSX_ARCHITECTURES }}" \
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/obs/install" \
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build/obsdeps;${{ github.workspace }}/build/qt" \
           -DENABLE_PLUGINS=OFF \
@@ -315,6 +317,8 @@ jobs:
         cmake \
           -S "${{ github.workspace }}" \
           -B "${{ github.workspace }}/build/ci" \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.CMAKE_OSX_DEPLOYMENT_TARGET }}" \
+          -DCMAKE_OSX_ARCHITECTURES="${{ env.CMAKE_OSX_ARCHITECTURES }}" \
           -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
           -DVERSION="${{ env.STREAMFX_VERSION }}" \
           -Dlibobs_DIR="${{ github.workspace }}/build/obs/install" \
