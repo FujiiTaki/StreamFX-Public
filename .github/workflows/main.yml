@@ -21,7 +21,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CACHE_VERSION: "2022-12-02"
+  CACHE_VERSION: "2026-07-15"
+  STREAMFX_VERSION: "0.12.0b367"
 
 jobs:
   windows:
@@ -105,17 +106,6 @@ jobs:
       with:
         path: "${{ github.workspace }}/build/obs"
         key: "obs${{ env.obs_version }}-${{ matrix.runner }}_${{ matrix.compiler }}-obsdeps${{ env.obs_deps_hash }}-qt${{ env.qt_hash }}-${{ env.CACHE_VERSION }}"
-    - name: "Fix zlib (MSVC ABI)"
-      shell: bash
-      run: |
-        curl -L -o /tmp/zlib.zip https://github.com/madler/zlib/releases/download/v1.3/zlib131.zip
-        7z x /tmp/zlib.zip -o/tmp/zlib
-
-        cp /tmp/zlib/contrib/vstudio/vc17/x64/ZlibDllRelease/zlib.lib \
-           build/obsdeps/lib/zlib.lib
-
-        cp /tmp/zlib/zlib.h build/obsdeps/include/zlib.h
-        cp /tmp/zlib/zconf.h build/obsdeps/include/zconf.h
     - name: "Dependency: OBS Libraries"
       id: obs
       if: ${{ steps.obs-cache.outputs.cache-hit != 'true' }}
@@ -150,9 +140,8 @@ jobs:
         cmake \
           --install "${{ github.workspace }}/build/obs" \
           --config RelWithDebInfo \
-          --component obs_librarie
+          --component obs_libraries
     - name: "Configure"
-      continue-on-error: true
       shell: bash
       run: |
         cmake \
@@ -160,6 +149,7 @@ jobs:
           -B "${{ github.workspace }}/build/ci" \
           -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" \
           -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+          -DVERSION="${{ env.STREAMFX_VERSION }}" \
           -Dlibobs_DIR="${{ github.workspace }}/build/obs/install" \
           -DQt${{ matrix.qt }}_DIR="${{ github.workspace }}/build/qt" \
           -DFFmpeg_DIR="${{ github.workspace }}/build/obsdeps" \
@@ -180,12 +170,7 @@ jobs:
     - name: "Package StreamFX (Windows)"
       shell: bash
       run: |
-        mkdir -p package/StreamFX/obs-plugins/64bit
-        mkdir -p package/StreamFX/data
-
-        cp build/ci/RelWithDebInfo/obs-plugins/64bit/StreamFX.dll package/StreamFX/obs-plugins/64bit/
-        cp -r data/StreamFX package/StreamFX/data/
-
+        cmake --install build/ci --prefix package/StreamFX --config RelWithDebInfo
         cd package
         7z a StreamFX-Windows.zip StreamFX
 
@@ -199,14 +184,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ "macos-12" ]
+        runner: [ "macos-15-intel" ]
         compiler: [ "Clang" ]
         qt: [ 6 ]
         include:
           - compiler: "Clang"
             name: "MacOS"
             CMAKE_GENERATOR: "Xcode"
-            CMAKE_OSX_DEPLOYMENT_TARGET: "10.15"
+            CMAKE_OSX_DEPLOYMENT_TARGET: "11.0"
             CMAKE_OSX_ARCHITECTURES: "x86_64;arm64"
     runs-on: "${{ matrix.runner }}"
     name: "${{ matrix.name }} (${{ matrix.compiler }})"
@@ -310,13 +295,13 @@ jobs:
           --config RelWithDebInfo \
           --component obs_libraries
     - name: "Configure"
-      continue-on-error: true
       shell: bash
       run: |
         cmake \
           -S "${{ github.workspace }}" \
           -B "${{ github.workspace }}/build/ci" \
           -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+          -DVERSION="${{ env.STREAMFX_VERSION }}" \
           -Dlibobs_DIR="${{ github.workspace }}/build/obs/install" \
           -DQt${{ matrix.qt }}_DIR="${{ github.workspace }}/build/qt" \
           -DFFmpeg_DIR="${{ github.workspace }}/build/obsdeps" \
@@ -335,12 +320,7 @@ jobs:
     - name: "Package StreamFX (macOS)"
       shell: bash
       run: |
-        mkdir -p package/StreamFX/obs-plugins
-        mkdir -p package/StreamFX/data
-
-        cp -R build/ci/RelWithDebInfo/obs-plugins/StreamFX.plugin package/StreamFX/obs-plugins/
-        cp -R data/StreamFX package/StreamFX/data/
-
+        cmake --install build/ci --prefix package/StreamFX --config RelWithDebInfo
         cd package
         zip -r StreamFX-macOS.zip StreamFX
 
@@ -374,18 +354,22 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 0
+    - name: "Gather Information"
+      shell: bash
+      run: |
+        echo "obs_version=$(git -C third-party/obs-studio describe --tags --long)" >> "$GITHUB_ENV"
     - name: "Install Build Tools"
       shell: bash
       run: |
         echo "Installing essential tools..."
         sudo apt-get -qq update
-        sudo apt-get install build-essential checkinstall pkg-config cmake ninja-build git
+        sudo apt-get install -y build-essential checkinstall pkg-config cmake ninja-build git
 
         # Install the appropriate compiler
         IFS=$'-' compiler=($(echo "${{ matrix.compiler }}")) # ToDo: Can this be done without invoking a sub-shell?
         echo "Installing '${compiler[0]}' version ${compiler[1]}..."
         if [[ "${compiler[0]}" == "GCC" ]]; then
-          sudo apt-get install binutils gcc-${compiler[1]} g++-${compiler[1]}
+          sudo apt-get install -y binutils gcc-${compiler[1]} g++-${compiler[1]}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${compiler[1]} 800 --slave /usr/bin/g++ g++ /usr/bin/g++-${compiler[1]}
 
           echo "CMAKE_C_COMPILER=gcc-${compiler[1]}" >> "$GITHUB_ENV"
@@ -444,7 +428,7 @@ jobs:
         popd > /dev/null
 
         # Extra requirements by libobs on Linux.
-        sudo apt-get install \
+        sudo apt-get install -y \
           libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
           libx264-dev libcurl4-openssl-dev libmbedtls-dev libgl1-mesa-dev libjansson-dev libluajit-5.1-dev python3-dev \
           libx11-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xinerama0-dev libxcomposite-dev libxinerama-dev \
@@ -477,7 +461,6 @@ jobs:
           --config Release \
           --component obs_libraries
     - name: "Configure"
-      continue-on-error: true
       shell: bash
       run: |
         cmake \
@@ -486,6 +469,7 @@ jobs:
           -DCMAKE_C_COMPILER="${{ env.CMAKE_C_COMPILER }}" \
           -DCMAKE_CXX_COMPILER="${{ env.CMAKE_CXX_COMPILER }}" \
           -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+          -DVERSION="${{ env.STREAMFX_VERSION }}" \
           -Dlibobs_DIR="${{ github.workspace }}/build/obs/install"
     - name: "Build: Debug"
       continue-on-error: true
@@ -499,12 +483,7 @@ jobs:
     - name: "Package StreamFX (Linux)"
       shell: bash
       run: |
-        mkdir -p package/StreamFX/obs-plugins
-        mkdir -p package/StreamFX/data
-
-        cp build/ci/RelWithDebInfo/obs-plugins/StreamFX.so package/StreamFX/obs-plugins/
-        cp -R data/StreamFX package/StreamFX/data/
-
+        cmake --install build/ci --prefix package/StreamFX --config RelWithDebInfo
         cd package
         tar -czvf StreamFX-Linux.tar.gz StreamFX
 
@@ -515,20 +494,24 @@ jobs:
         path: package/StreamFX-Linux.tar.gz
 
   release:
-    name: "Publish Nightly"
+    name: "Publish Release"
     runs-on: ubuntu-latest
     needs: [windows, macos, ubuntu]
+    permissions:
+      contents: write
 
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v4
 
-    - name: Publish Nightly Pre-Release
-      uses: softprops/action-gh-release@v1
+    - name: Publish StreamFX Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: "Nightly"
-        tag_name: "nightly"
+        name: "StreamFX ${{ env.STREAMFX_VERSION }}"
+        tag_name: "${{ env.STREAMFX_VERSION }}"
         prerelease: true
+        generate_release_notes: true
+        fail_on_unmatched_files: true
         files: |
           windows/StreamFX-Windows.zip
           macos/StreamFX-macOS.zip
