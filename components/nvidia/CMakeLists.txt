@@ -6,33 +6,47 @@ cmake_minimum_required(VERSION 3.26)
 project("NVIDIA")
 list(APPEND CMAKE_MESSAGE_INDENT "[${PROJECT_NAME}] ")
 
+set(NVIDIA_AFX_INCLUDE_DIR "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-afx-sdk/nvafx/include/")
+set(NVIDIA_AR_INCLUDE_DIR "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-ar-sdk/nvar/include/")
+set(NVIDIA_AR_SOURCE_DIR "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-ar-sdk/nvar/src/")
+set(NVIDIA_VFX_INCLUDE_DIR "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-vfx-sdk/nvvfx/include/")
+set(NVIDIA_VFX_SOURCE_DIR "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-vfx-sdk/nvvfx/src/")
+
+set(NVIDIA_SDKS_AVAILABLE ON)
+foreach(NVIDIA_SDK_DIR
+    "${NVIDIA_AFX_INCLUDE_DIR}"
+    "${NVIDIA_AR_INCLUDE_DIR}"
+    "${NVIDIA_AR_SOURCE_DIR}"
+    "${NVIDIA_VFX_INCLUDE_DIR}"
+    "${NVIDIA_VFX_SOURCE_DIR}"
+)
+    if(NOT EXISTS "${NVIDIA_SDK_DIR}")
+        set(NVIDIA_SDKS_AVAILABLE OFF)
+    endif()
+endforeach()
+
 #- NVIDIA Audio Effects SDK
 if(NOT TARGET NVIDIA::AFX)
     add_library(NVIDIA::AFX IMPORTED INTERFACE)
-    target_include_directories(NVIDIA::AFX
-        INTERFACE
-            "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-afx-sdk/nvafx/include/"
-    )
+    if(NVIDIA_SDKS_AVAILABLE)
+        target_include_directories(NVIDIA::AFX INTERFACE "${NVIDIA_AFX_INCLUDE_DIR}")
+    endif()
 endif()
 
 #- NVIDIA Augmented Reality SDK
 if(NOT TARGET NVIDIA::AR)
     add_library(NVIDIA::AR IMPORTED INTERFACE)
-    target_include_directories(NVIDIA::AR
-        INTERFACE
-            "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-ar-sdk/nvar/include/"
-            "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-ar-sdk/nvar/src/"
-    )
+    if(NVIDIA_SDKS_AVAILABLE)
+        target_include_directories(NVIDIA::AR INTERFACE "${NVIDIA_AR_INCLUDE_DIR}" "${NVIDIA_AR_SOURCE_DIR}")
+    endif()
 endif()
 
 #- NVIDIA Video Effects SDK
 if(NOT TARGET NVIDIA::VFX)
     add_library(NVIDIA::VFX IMPORTED INTERFACE)
-    target_include_directories(NVIDIA::VFX
-        INTERFACE
-            "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-vfx-sdk/nvvfx/include/"
-            "${StreamFX_SOURCE_DIR}/third-party/nvidia-maxine-vfx-sdk/nvvfx/src/"
-    )
+    if(NVIDIA_SDKS_AVAILABLE)
+        target_include_directories(NVIDIA::VFX INTERFACE "${NVIDIA_VFX_INCLUDE_DIR}" "${NVIDIA_VFX_SOURCE_DIR}")
+    endif()
 endif()
 
 streamfx_add_component("NVIDIA")
@@ -43,6 +57,8 @@ target_link_libraries(${COMPONENT_TARGET}
         NVIDIA::VFX
 )
 
-if(NOT D_PLATFORM_WINDOWS)
+if(NOT NVIDIA_SDKS_AVAILABLE)
+    streamfx_disable_component("NVIDIA" REASON "The NVIDIA Maxine SDK sources are not available in this repository.")
+elseif(NOT D_PLATFORM_WINDOWS)
     streamfx_disable_component("NVIDIA" REASON "NVIDIA integration is (currently) only available for Windows under Direct3D11.")
 endif()
