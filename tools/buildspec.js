@@ -26,12 +26,19 @@ try {
 	}
 
 	let json = JSON.parse(fs.readFileSync(specFile));
-	let data = json.dependencies[name];
+	let dependencies = json.dependencies;
+	if (dependencies == undefined) {
+		let preset = json.configurePresets?.find((entry) => entry.name === "dependencies");
+		dependencies = preset?.vendor?.["obsproject.com/obs-studio"]?.dependencies;
+	}
+	let data = dependencies?.[name];
 	if (data == undefined) {
 		throw new TypeError("Expected object, but got nothing.");
 	}
 
-	let url = `${data.baseUrl}/${data.version}/${osarch[0]}-${fileName}-${data.version}-${osarch[1]}.${osarch[0] == "windows" ? "zip" : "tar.xz"}`;
+	let revision = data.revision?.[variant];
+	let revisionSuffix = revision == undefined ? "" : `-v${revision}`;
+	let url = `${data.baseUrl}/${data.version}/${osarch[0]}-${fileName}-${data.version}-${osarch[1]}${revisionSuffix}.${osarch[0] == "windows" ? "zip" : "tar.xz"}`;
 	console.log(data.version);
 	console.log(data.hashes[variant]);
 	console.log(encodeURI(url));

@@ -21,8 +21,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CACHE_VERSION: "2026-07-15"
-  STREAMFX_VERSION: "0.12.0b367"
+  CACHE_VERSION: "2026-07-15-obs32"
+  OBS_VERSION: "32.1.2"
+  STREAMFX_VERSION: "0.12.0b368"
 
 jobs:
   windows:
@@ -35,7 +36,7 @@ jobs:
         qt: [ 6 ]
         include:
           - compiler: "MSVC"
-            CMAKE_SYSTEM_VERSION: "10.0.20348.0"
+            CMAKE_SYSTEM_VERSION: "10.0.22621.0"
             CMAKE_GENERATOR: "Visual Studio 17 2022"
             CMAKE_GENERATOR_PLATFORM: "x64"
     runs-on: "${{ matrix.runner }}"
@@ -56,7 +57,7 @@ jobs:
       shell: bash
       run: |
         # Define buildspec file
-        buildspec="${{ github.workspace }}/third-party/obs-studio/buildspec.json"
+        buildspec="${{ github.workspace }}/third-party/obs-studio/CMakePresets.json"
 
         # Prebuilt Dependencies Version
         IFS=$'\n' buildspecdata=($(node tools/buildspec.js "${buildspec}" "prebuilt" "windows-x64"))
@@ -128,15 +129,6 @@ jobs:
         CMAKE_GENERATOR_TOOLSET: ""
       shell: bash
       run: |
-        # Apply patches to obs-studio
-        pushd "${{ github.workspace }}/third-party/obs-studio" > /dev/null
-        for f in ../../patches/obs-studio/*.patch; do
-          echo "Applying patch '${f}''..."
-          [ -e "$f" ] || continue
-          git apply "$f"
-        done
-        popd > /dev/null
-
         # Build obs-studio
         cmake \
           -S "${{ github.workspace }}/third-party/obs-studio" \
@@ -145,8 +137,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/obs/install" \
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build/zlib;${{ github.workspace }}/build/obsdeps;${{ github.workspace }}/build/qt" \
           -DZLIB_ROOT="${{ github.workspace }}/build/zlib" \
-          -DENABLE_PLUGINS=OFF \
-          -DENABLE_UI=OFF \
+          -DENABLE_FRONTEND=OFF \
           -DENABLE_SCRIPTING=OFF
         cmake \
           --build "${{ github.workspace }}/build/obs" \
@@ -155,7 +146,7 @@ jobs:
         cmake \
           --install "${{ github.workspace }}/build/obs" \
           --config RelWithDebInfo \
-          --component obs_libraries
+          --component Development
     - name: "Configure"
       shell: bash
       run: |
@@ -206,7 +197,7 @@ jobs:
           - compiler: "Clang"
             name: "MacOS"
             CMAKE_GENERATOR: "Xcode"
-            CMAKE_OSX_DEPLOYMENT_TARGET: "11.0"
+            CMAKE_OSX_DEPLOYMENT_TARGET: "12.0"
             CMAKE_OSX_ARCHITECTURES: "x86_64;arm64"
     runs-on: "${{ matrix.runner }}"
     name: "${{ matrix.name }} (${{ matrix.compiler }})"
@@ -228,7 +219,7 @@ jobs:
       shell: bash
       run: |
         # Define buildspec file
-        buildspec="${{ github.workspace }}/third-party/obs-studio/buildspec.json"
+        buildspec="${{ github.workspace }}/third-party/obs-studio/CMakePresets.json"
 
         # Prebuilt Dependencies Version
         IFS=$'\n' buildspecdata=($(node tools/buildspec.js "${buildspec}" "prebuilt" "macos-universal"))
@@ -283,15 +274,6 @@ jobs:
       if: ${{ steps.obs-cache.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
-        # Apply patches to obs-studio
-        pushd "${{ github.workspace }}/third-party/obs-studio" > /dev/null
-        for f in ../../patches/obs-studio/*.patch; do
-          echo "Applying patch '${f}''..."
-          [ -e "$f" ] || continue
-          git apply "$f"
-        done
-        popd > /dev/null
-
         # Build obs-studio
         cmake \
           -S "${{ github.workspace }}/third-party/obs-studio" \
@@ -300,8 +282,7 @@ jobs:
           -DCMAKE_OSX_ARCHITECTURES="${{ env.CMAKE_OSX_ARCHITECTURES }}" \
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/obs/install" \
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build/obsdeps;${{ github.workspace }}/build/qt" \
-          -DENABLE_PLUGINS=OFF \
-          -DENABLE_UI=OFF \
+          -DENABLE_FRONTEND=OFF \
           -DENABLE_SCRIPTING=OFF
         cmake \
           --build "${{ github.workspace }}/build/obs" \
@@ -310,7 +291,7 @@ jobs:
         cmake \
           --install "${{ github.workspace }}/build/obs" \
           --config RelWithDebInfo \
-          --component obs_libraries
+          --component Development
     - name: "Configure"
       shell: bash
       run: |
@@ -353,13 +334,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ "ubuntu-22.04" ]
-        compiler: [ "GCC-12" ]
+        runner: [ "ubuntu-24.04" ]
+        compiler: [ "GCC-14" ]
         qt: [ 6 ]
         CMAKE_GENERATOR: [ "Ninja Multi-Config" ]
         include:
-          - runner: "ubuntu-22.04"
-            name: "Ubuntu 22.04"
+          - runner: "ubuntu-24.04"
+            name: "Ubuntu 24.04"
     runs-on: "${{ matrix.runner }}"
     name: "${{ matrix.name }} (${{ matrix.compiler }}, Qt${{ matrix.qt }})"
     env:
@@ -437,15 +418,6 @@ jobs:
       if: ${{ steps.obs-cache.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
-        # Apply patches to obs-studio
-        pushd "${{ github.workspace }}/third-party/obs-studio" > /dev/null
-        for f in ../../patches/obs-studio/*.patch; do
-          echo "Applying patch '${f}''..."
-          [ -e "$f" ] || continue
-          git apply "$f"
-        done
-        popd > /dev/null
-
         # Extra requirements by libobs on Linux.
         sudo apt-get install -y \
           libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
@@ -468,8 +440,7 @@ jobs:
           -DCMAKE_CXX_FLAGS="${{ env.CMAKE_CXX_FLAGS }}" \
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/obs/install" \
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build/obsdeps;${{ github.workspace }}/build/qt" \
-          -DENABLE_PLUGINS=OFF \
-          -DENABLE_UI=OFF \
+          -DENABLE_FRONTEND=OFF \
           -DENABLE_SCRIPTING=OFF
         cmake \
           --build "${{ github.workspace }}/build/obs" \
@@ -478,7 +449,7 @@ jobs:
         cmake \
           --install "${{ github.workspace }}/build/obs" \
           --config Release \
-          --component obs_libraries
+          --component Development
     - name: "Configure"
       shell: bash
       run: |
@@ -512,11 +483,40 @@ jobs:
         name: linux
         path: package/StreamFX-Linux.tar.gz
 
+  windows-compatibility:
+    name: "Validate Windows runtime compatibility"
+    runs-on: ubuntu-latest
+    needs: [windows]
+
+    steps:
+    - name: "Clone"
+      uses: actions/checkout@v4
+
+    - name: "Download StreamFX artifact"
+      uses: actions/download-artifact@v4
+      with:
+        name: windows
+        path: artifact
+
+    - name: "Download OBS Studio ${{ env.OBS_VERSION }}"
+      shell: bash
+      run: |
+        curl --retry 5 --retry-delay 30 -jLo /tmp/obs.zip \
+          "https://github.com/obsproject/obs-studio/releases/download/${{ env.OBS_VERSION }}/OBS-Studio-${{ env.OBS_VERSION }}-Windows-x64.zip"
+        unzip -q artifact/StreamFX-Windows.zip -d /tmp/streamfx
+
+    - name: "Check imported runtime libraries"
+      shell: bash
+      run: |
+        python3 tests/check_obs_runtime_dependencies.py \
+          /tmp/streamfx/StreamFX/obs-plugins/64bit/StreamFX.dll \
+          /tmp/obs.zip
+
   release:
     name: "Publish Release"
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    needs: [windows, macos, ubuntu]
+    needs: [windows, macos, ubuntu, windows-compatibility]
     permissions:
       contents: write
 
