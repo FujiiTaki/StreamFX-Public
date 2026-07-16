@@ -227,6 +227,9 @@ jobs:
     - name: "Select Xcode 26.1"
       shell: bash
       run: sudo xcode-select --switch /Applications/Xcode_26.1.app/Contents/Developer
+    - name: "Enable Swift in OBS development build"
+      shell: bash
+      run: git -C third-party/obs-studio apply ../../patches/obs-studio/0003-cmake-Enable-Swift-for-Metal.patch
     - name: "Gather Information"
       id: info
       shell: bash

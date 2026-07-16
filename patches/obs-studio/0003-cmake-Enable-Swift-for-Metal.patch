@@ -1,0 +1,13 @@
+From: StreamFX Public CI <noreply@github.com>
+Subject: [PATCH] cmake: Enable Swift for the Metal renderer
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -27,5 +27,6 @@
+ add_subdirectory(libobs-opengl)
+ if(OS_MACOS)
++  enable_language(Swift)
+   add_subdirectory(libobs-metal)
+ endif()
+ add_subdirectory(plugins)
