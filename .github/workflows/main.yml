@@ -190,15 +190,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ "macos-15-intel" ]
-        compiler: [ "Clang" ]
-        qt: [ 6 ]
         include:
-          - compiler: "Clang"
-            name: "MacOS"
+          - runner: "macos-15"
+            compiler: "Clang"
+            qt: 6
+            name: "macOS Intel"
             CMAKE_GENERATOR: "Xcode"
             CMAKE_OSX_DEPLOYMENT_TARGET: "12.0"
-            CMAKE_OSX_ARCHITECTURES: "x86_64;arm64"
+            CMAKE_OSX_ARCHITECTURES: "x86_64"
+            artifact: "macos-intel"
+            package: "StreamFX-macOS-Intel.zip"
+          - runner: "macos-15"
+            compiler: "Clang"
+            qt: 6
+            name: "macOS Apple Silicon"
+            CMAKE_GENERATOR: "Xcode"
+            CMAKE_OSX_DEPLOYMENT_TARGET: "12.0"
+            CMAKE_OSX_ARCHITECTURES: "arm64"
+            artifact: "macos-apple"
+            package: "StreamFX-macOS-Apple-Silicon.zip"
     runs-on: "${{ matrix.runner }}"
     name: "${{ matrix.name }} (${{ matrix.compiler }})"
     env:
@@ -214,6 +224,9 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 0
+    - name: "Select Xcode 26.1"
+      shell: bash
+      run: sudo xcode-select --switch /Applications/Xcode_26.1.app/Contents/Developer
     - name: "Gather Information"
       id: info
       shell: bash
@@ -268,7 +281,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: "${{ github.workspace }}/build/obs"
-        key: "obs${{ env.obs_version }}-${{ matrix.runner }}_${{ matrix.compiler }}--obsdeps${{ env.obs_deps_hash }}-qt${{ env.qt_hash }}-${{ env.CACHE_VERSION }}"
+        key: "obs${{ env.obs_version }}-${{ matrix.runner }}_${{ matrix.compiler }}-${{ matrix.CMAKE_OSX_ARCHITECTURES }}-obsdeps${{ env.obs_deps_hash }}-qt${{ env.qt_hash }}-${{ env.CACHE_VERSION }}"
     - name: "Dependency: OBS Libraries"
       id: obs
       if: ${{ steps.obs-cache.outputs.cache-hit != 'true' }}
@@ -322,13 +335,13 @@ jobs:
       run: |
         cmake --install build/ci --prefix package/StreamFX --config RelWithDebInfo
         cd package
-        zip -r StreamFX-macOS.zip StreamFX
+        zip -r "${{ matrix.package }}" StreamFX
 
     - name: "Upload macOS Artifact"
       uses: actions/upload-artifact@v4
       with:
-        name: macos
-        path: package/StreamFX-macOS.zip
+        name: "${{ matrix.artifact }}"
+        path: "package/${{ matrix.package }}"
 
   ubuntu:
     strategy:
@@ -549,5 +562,6 @@ jobs:
         fail_on_unmatched_files: true
         files: |
           windows/StreamFX-Windows.zip
-          macos/StreamFX-macOS.zip
+          macos-intel/StreamFX-macOS-Intel.zip
+          macos-apple/StreamFX-macOS-Apple-Silicon.zip
           linux/StreamFX-Linux.tar.gz
