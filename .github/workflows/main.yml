@@ -451,8 +451,12 @@ jobs:
           -DCMAKE_CXX_FLAGS="${{ env.CMAKE_CXX_FLAGS }}" \
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/obs/install" \
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/build/obsdeps;${{ github.workspace }}/build/qt" \
+          -DENABLE_AJA=OFF \
           -DENABLE_FRONTEND=OFF \
-          -DENABLE_SCRIPTING=OFF
+          -DENABLE_SCRIPTING=OFF \
+          -DENABLE_VLC=ON \
+          -DENABLE_WAYLAND=ON \
+          -DENABLE_WEBRTC=OFF
         cmake \
           --build "${{ github.workspace }}/build/obs" \
           --config Release \
