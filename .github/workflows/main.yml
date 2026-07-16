@@ -363,7 +363,7 @@ jobs:
       run: |
         echo "Installing essential tools..."
         sudo apt-get -qq update
-        sudo apt-get install -y build-essential checkinstall pkg-config cmake ninja-build git extra-cmake-modules libsimde-dev
+        sudo apt-get install -y build-essential checkinstall pkg-config cmake ninja-build git
 
         # Install the appropriate compiler
         IFS=$'-' compiler=($(echo "${{ matrix.compiler }}")) # ToDo: Can this be done without invoking a sub-shell?
@@ -419,14 +419,25 @@ jobs:
       shell: bash
       run: |
         # Extra requirements by libobs on Linux.
-        sudo apt-get install -y \
-          libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
-          libx264-dev libcurl4-openssl-dev libmbedtls-dev libgl1-mesa-dev libjansson-dev libluajit-5.1-dev python3-dev \
-          libx11-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xinerama0-dev libxcomposite-dev libxinerama-dev \
-          libxcb1-dev libx11-xcb-dev libxcb-xfixes0-dev swig libcmocka-dev libxss-dev libglvnd-dev \
-          libgles2-mesa-dev libwayland-dev \
-          libasound2-dev libfdk-aac-dev libfontconfig-dev libfreetype6-dev libjack-jackd2-dev libpulse-dev \
-          libsndio-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev libvlc-dev libdrm-dev
+        # Keep this list aligned with OBS Studio's .github/scripts/utils.zsh/setup_ubuntu.
+        sudo apt-get install -y --no-install-recommends \
+          build-essential libglib2.0-dev extra-cmake-modules lsb-release dh-cmake \
+          libcurl4-openssl-dev \
+          libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev \
+          libswresample-dev libswscale-dev \
+          libjansson-dev libx11-xcb-dev libgles2-mesa-dev libwayland-dev libpipewire-0.3-dev \
+          libpulse-dev libx264-dev libmbedtls-dev libgl1-mesa-dev uthash-dev libsimde-dev \
+          libluajit-5.1-dev python3-dev \
+          libx11-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xinerama0-dev \
+          libxcb-composite0-dev libxinerama-dev libxcb1-dev libxcb-xfixes0-dev \
+          swig libcmocka-dev libxss-dev libglvnd-dev \
+          libxkbcommon-dev libatk1.0-dev libatk-bridge2.0-dev libxcomposite-dev libxdamage-dev \
+          libasound2-dev libfdk-aac-dev libfontconfig-dev libfreetype6-dev libjack-jackd2-dev \
+          libsndio-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev libvlc-dev \
+          libpci-dev libdrm-dev \
+          nlohmann-json3-dev libwebsocketpp-dev libasio-dev libqrcodegencpp-dev \
+          libffmpeg-nvenc-dev librist-dev libsrt-openssl-dev \
+          libvpl-dev libvpl2
 
         # Build obs-studio
         cmake \
