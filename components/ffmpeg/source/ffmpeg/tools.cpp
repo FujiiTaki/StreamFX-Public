@@ -262,7 +262,9 @@ std::vector<AVPixelFormat> tools::get_software_formats(const AVPixelFormat* list
 		AV_PIX_FMT_MMAL,
 		AV_PIX_FMT_D3D11VA_VLD,
 		AV_PIX_FMT_CUDA,
+#if LIBAVUTIL_VERSION_MAJOR < 59
 		AV_PIX_FMT_XVMC,
+#endif
 		AV_PIX_FMT_VIDEOTOOLBOX,
 		AV_PIX_FMT_MEDIACODEC,
 		AV_PIX_FMT_D3D11,
