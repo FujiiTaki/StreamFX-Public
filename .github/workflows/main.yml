@@ -420,18 +420,9 @@ jobs:
         sudo apt-get -y install -V \
           libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev \
           libcurl4-openssl-dev
-    - name: "Dependency: OBS Libraries (Cache)"
-      id: obs-cache
-      uses: actions/cache@v4
-      with:
-        path: "${{ github.workspace }}/build/obs"
-        key: "obs${{ env.obs_version }}-${{ matrix.runner }}_${{ matrix.compiler }}--${{ matrix.runner }}-${{ matrix.compiler }}-${{ env.CACHE_VERSION }}"
-    - name: "Dependency: OBS Libraries"
-      id: obs
-      if: ${{ steps.obs-cache.outputs.cache-hit != 'true' }}
+    - name: "Dependency: OBS Linux Build Requirements"
       shell: bash
       run: |
-        # Extra requirements by libobs on Linux.
         # Keep this list aligned with OBS Studio's .github/scripts/utils.zsh/setup_ubuntu.
         sudo apt-get install -y --no-install-recommends \
           build-essential libglib2.0-dev extra-cmake-modules lsb-release dh-cmake \
@@ -451,7 +442,17 @@ jobs:
           nlohmann-json3-dev libwebsocketpp-dev libasio-dev libqrcodegencpp-dev \
           libffmpeg-nvenc-dev librist-dev libsrt-openssl-dev \
           libvpl-dev libvpl2
-
+    - name: "Dependency: OBS Libraries (Cache)"
+      id: obs-cache
+      uses: actions/cache@v4
+      with:
+        path: "${{ github.workspace }}/build/obs"
+        key: "obs${{ env.obs_version }}-${{ matrix.runner }}_${{ matrix.compiler }}--${{ matrix.runner }}-${{ matrix.compiler }}-${{ env.CACHE_VERSION }}"
+    - name: "Dependency: OBS Libraries"
+      id: obs
+      if: ${{ steps.obs-cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
         # Build obs-studio
         cmake \
           -S "${{ github.workspace }}/third-party/obs-studio" \
