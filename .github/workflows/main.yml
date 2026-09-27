@@ -21,9 +21,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CACHE_VERSION: "2026-07-15-obs32"
-  OBS_VERSION: "32.1.2"
-  STREAMFX_VERSION: "0.12.0b368"
+  CACHE_VERSION: "2026-09-27-obs322"
+  OBS_VERSION: "32.2.2"
+  STREAMFX_VERSION: "0.12.0b369"
 
 jobs:
   windows:
